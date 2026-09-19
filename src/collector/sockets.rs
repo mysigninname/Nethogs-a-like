@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct SocketOwner {
@@ -37,10 +37,7 @@ pub fn sockets_for_process(pid: u32) -> crate::process::ProcessSockets {
     let mut socket_inodes = Vec::new();
 
     let Ok(entries) = fs::read_dir(fd_path) else {
-        return crate::process::ProcessSockets {
-            pid,
-            socket_inodes,
-        };
+        return crate::process::ProcessSockets { pid, socket_inodes };
     };
 
     for entry in entries.flatten() {
@@ -66,8 +63,5 @@ pub fn sockets_for_process(pid: u32) -> crate::process::ProcessSockets {
         }
     }
 
-    crate::process::ProcessSockets {
-        pid,
-        socket_inodes,
-    }
+    crate::process::ProcessSockets { pid, socket_inodes }
 }

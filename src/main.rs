@@ -1,5 +1,5 @@
-mod process;
 mod collector;
+mod process;
 
 use collector::procfs::list_processes;
 use collector::sockets::sockets_for_process;
@@ -19,18 +19,13 @@ fn main() {
 
         println!(
             "{:>8}  {:<24} {:?}",
-            sockets.pid,
-            process.command,
-            sockets.socket_inodes
+            sockets.pid, process.command, sockets.socket_inodes
         );
 
         process_sockets.push(sockets);
     }
 
-    let owners = collector::sockets::group_socket_owners(
-        &processes,
-        &process_sockets,
-    );
+    let owners = collector::sockets::group_socket_owners(&processes, &process_sockets);
 
     println!();
     println!("SOCKET OWNERS");
