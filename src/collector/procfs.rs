@@ -21,16 +21,25 @@ pub fn list_processes() -> Vec<ProcessInfo> {
             continue;
         };
 
-        let command_path = format!("/proc/{pid}/comm");
+        let command_path = format!("/proc/{pid}/cmdline");
 
         let Ok(command) = fs::read_to_string(command_path) else {
             continue;
         };
 
-        processes.push(ProcessInfo {
-            pid,
-            command: command.trim().to_string(),
-        });
+        let command = command
+            .split('\0')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .to_string();
+
+        if command.is_empty() {
+            continue;
+        }
+
+        processes.push(ProcessInfo { pid, command });
+
     }
 
     processes.sort_by_key(|process| process.pid);
