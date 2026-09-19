@@ -19,82 +19,9 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Create project structure
-        shell: bash
+      - name: Check project
         run: |
-          set -euo pipefail
-
-          mkdir -p \
-            src \
-            packaging/systemd \
-            packaging/sysvinit \
-            ebpf/src \
-            scripts
-
-          if [[ ! -f Cargo.toml ]]; then
-            cat > Cargo.toml <<'EOF'
-          [package]
-          name = "netmonitor"
-          version = "0.1.0"
-          edition = "2024"
-
-          [dependencies]
-          EOF
-          fi
-
-          if [[ ! -f src/main.rs ]]; then
-            cat > src/main.rs <<'EOF'
-          use std::fs;
-
-          fn main() {
-              println!("Running processes:");
-
-              let Ok(entries) = fs::read_dir("/proc") else {
-                  eprintln!("Could not read /proc");
-                  return;
-              };
-
-              for entry in entries.flatten() {
-                  let name = entry.file_name();
-                  let name = name.to_string_lossy();
-
-                  if !name.chars().all(|character| character.is_ascii_digit()) {
-                      continue;
-                  }
-
-                  let command_path = format!("/proc/{name}/comm");
-
-                  if let Ok(command) = fs::read_to_string(command_path) {
-                      println!("{name:>8}  {}", command.trim());
-                  }
-              }
-          }
-          EOF
-          fi
-
-          if [[ ! -f .gitignore ]]; then
-            cat > .gitignore <<'EOF'
-          /target/
-          EOF
-          fi
-
-          cargo fmt
-          cargo check
-          cargo test
-
-      - name: Commit generated files
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add Cargo.toml src .gitignore packaging ebpf scripts
-
-          if git diff --cached --quiet; then
-            echo "No new files to commit"
-          else
-            git commit -m "Create initial project structure"
-            git push
-          fi
+          cargo fmt --all -- --check
+          cargo clippy --all-targets --all-features -- -D warnings
+          cargo test --all-features
+          cargo build
