@@ -25,6 +25,23 @@ pub fn read_socket_table(path: &str, protocol: Protocol) -> io::Result<Vec<Socke
     Ok(parse_socket_table(&contents, protocol))
 }
 
+pub fn read_all_socket_tables() -> io::Result<Vec<SocketInfo>> {
+    let tables = [
+        ("/proc/net/tcp", Protocol::Tcp),
+        ("/proc/net/tcp6", Protocol::Tcp6),
+        ("/proc/net/udp", Protocol::Udp),
+        ("/proc/net/udp6", Protocol::Udp6),
+    ];
+
+    let mut sockets = Vec::new();
+
+    for (path, protocol) in tables {
+        sockets.extend(read_socket_table(path, protocol)?);
+    }
+
+    Ok(sockets)
+}
+
 pub fn parse_socket_table(contents: &str, protocol: Protocol) -> Vec<SocketInfo> {
     contents
         .lines()
@@ -45,13 +62,16 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
     // 8 uid
     // 9 timeout
     // 10 inode
-    if fields.len() < 11 {
+    if fields.len() < 10 {
         return None;
     }
 
     let (local_address, local_port) = parse_endpoint(fields[1])?;
     let (remote_address, remote_port) = parse_endpoint(fields[2])?;
-    let inode = fields[10].parse::<u64>().ok()?;
+
+    println!("DEBUG: {fields:?}");
+
+    let inode = fields[9].parse::<u64>().ok()?;
 
     Some(SocketInfo {
         inode,
