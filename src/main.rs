@@ -1,3 +1,4 @@
+mod process;
 mod collector;
 
 use collector::procfs::list_processes;
@@ -6,7 +7,10 @@ use collector::sockets::sockets_for_process;
 fn main() {
     println!("{:>8}  {:<24} SOCKET INODES", "PID", "PROCESS");
 
-    for process in list_processes() {
+    let processes = list_processes();
+    let mut process_sockets = Vec::new();
+
+    for process in &processes {
         let sockets = sockets_for_process(process.pid);
 
         if sockets.socket_inodes.is_empty() {
@@ -15,8 +19,28 @@ fn main() {
 
         println!(
             "{:>8}  {:<24} {:?}",
-            sockets.pid, process.command, sockets.socket_inodes
+            sockets.pid,
+            process.command,
+            sockets.socket_inodes
         );
+
+        process_sockets.push(sockets);
+    }
+
+    let owners = collector::sockets::group_socket_owners(
+        &processes,
+        &process_sockets,
+    );
+
+    println!();
+    println!("SOCKET OWNERS");
+
+    for (inode, owners) in owners {
+        println!("Socket {inode}:");
+
+        for owner in owners {
+            println!("  PID {}: {}", owner.pid, owner.process_name);
+        }
     }
 
     println!();
