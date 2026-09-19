@@ -60,16 +60,18 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
     // 3 state
     // ...
     // 8 uid
-    // 9 timeout
-    // 10 inode
-    if fields.len() < 11 {
+    // 9 inode
+    // 10 timeout
+    
+
+    if fields.len() < 10 {
         return None;
     }
 
     let (local_address, local_port) = parse_endpoint(fields[1], protocol)?;
     let (remote_address, remote_port) = parse_endpoint(fields[2], protocol)?;
 
-    let inode = fields[10].parse::<u64>().ok()?;
+    let inode = fields[9].parse::<u64>().ok()?;
 
     Some(SocketInfo {
         inode,

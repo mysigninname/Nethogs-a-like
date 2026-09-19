@@ -30,7 +30,7 @@ fn main() {
     println!();
     println!("SOCKET OWNERS");
 
-    for (inode, owners) in owners {
+    for (inode, owners) in &owners {
         println!("Socket {inode}:");
 
         for owner in owners {
@@ -46,8 +46,11 @@ fn main() {
             println!("Found {} sockets", sockets.len());
 
             for socket in sockets {
-                println!("{socket:?}");
+                if owners.contains_key(&socket.inode) {
+                    println!("{socket:?}");
+                }
             }
+
         }
         Err(error) => {
             eprintln!("Could not read socket tables: {error}");
