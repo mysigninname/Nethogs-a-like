@@ -46,9 +46,10 @@ fn main() {
             println!("Found {} sockets", sockets.len());
 
             for socket in sockets {
-                if owners.contains_key(&socket.inode) {
-                    println!("{socket:?}");
+                if let Some(socket_owners) = owners.get(&socket.inode) {
+                    println!("{socket:?} owners: {socket_owners:?}");
                 }
+
             }
 
         }
