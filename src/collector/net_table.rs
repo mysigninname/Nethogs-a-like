@@ -79,7 +79,7 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
         local_port,
         remote_address: Some(remote_address),
         remote_port: Some(remote_port),
-        state: fields[3].to_string(),
+        state: socket_state(fields[3], protocol).to_string(),
     })
 }
 
@@ -111,4 +111,24 @@ fn parse_ipv4_address(value: &str) -> Option<String> {
         "{}.{}.{}.{}",
         bytes[0], bytes[1], bytes[2], bytes[3]
     ))
+}
+
+fn socket_state(value: &str, protocol: Protocol) -> &str {
+    match protocol {
+        Protocol::Tcp | Protocol::Tcp6 => match value {
+            "01" => "ESTABLISHED",
+            "02" => "SYN_SENT",
+            "03" => "SYN_RECV",
+            "04" => "FIN_WAIT1",
+            "05" => "FIN_WAIT2",
+            "06" => "TIME_WAIT",
+            "07" => "CLOSE",
+            "08" => "CLOSE_WAIT",
+            "09" => "LAST_ACK",
+            "0A" => "LISTEN",
+            "0B" => "CLOSING",
+            _ => "UNKNOWN",
+        },
+        Protocol::Udp | Protocol::Udp6 => value,
+    }
 }
