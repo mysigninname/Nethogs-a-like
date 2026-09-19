@@ -36,3 +36,19 @@ pub fn list_processes() -> Vec<ProcessInfo> {
     processes.sort_by_key(|process| process.pid);
     processes
 }
+
+#[cfg(test)]
+mod tests {
+    use super::list_processes;
+
+    #[test]
+    fn finds_current_process() {
+        let processes = list_processes();
+        let current_pid = std::process::id();
+
+        assert!(
+            processes.iter().any(|process| process.pid == current_pid),
+            "the current process was not found"
+        );
+    }
+}
