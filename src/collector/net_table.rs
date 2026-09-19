@@ -66,8 +66,8 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
         return None;
     }
 
-    let (local_address, local_port) = parse_endpoint(fields[1])?;
-    let (remote_address, remote_port) = parse_endpoint(fields[2])?;
+    let (local_address, local_port) = parse_endpoint(fields[1], protocol)?;
+    let (remote_address, remote_port) = parse_endpoint(fields[2], protocol)?;
 
     println!("DEBUG: {fields:?}");
 
@@ -84,9 +84,32 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
     })
 }
 
-fn parse_endpoint(value: &str) -> Option<(String, u16)> {
+fn parse_endpoint(value: &str, protocol: Protocol) -> Option<(String, u16)> {
     let (address, port) = value.split_once(':')?;
     let port = u16::from_str_radix(port, 16).ok()?;
 
-    Some((address.to_string(), port))
+    let address = match protocol {
+        Protocol::Tcp | Protocol::Udp => parse_ipv4_address(address)?,
+        Protocol::Tcp6 | Protocol::Udp6 => address.to_string(),
+    };
+
+    Some((address, port))
+}
+
+fn parse_ipv4_address(value: &str) -> Option<String> {
+    if value.len() != 8 {
+        return None;
+    }
+
+    let bytes = [
+        u8::from_str_radix(&value[6..8], 16).ok()?,
+        u8::from_str_radix(&value[4..6], 16).ok()?,
+        u8::from_str_radix(&value[2..4], 16).ok()?,
+        u8::from_str_radix(&value[0..2], 16).ok()?,
+    ];
+
+    Some(format!(
+        "{}.{}.{}.{}",
+        bytes[0], bytes[1], bytes[2], bytes[3]
+    ))
 }
