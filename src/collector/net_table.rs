@@ -1,5 +1,6 @@
 use std::fs;
 use std::io;
+use std::net::Ipv6Addr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protocol {
@@ -63,7 +64,6 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
     // 9 timeout
     // 10 inode
 
-   
     if fields.len() < 11 {
         return None;
     }
@@ -77,7 +77,6 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
         None => (None, None),
     };
 
-
     let inode = fields[10].parse::<u64>().ok()?;
 
     Some(SocketInfo {
@@ -87,7 +86,6 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
         local_port,
         remote_address,
         remote_port,
-
         state: socket_state(fields[3], protocol).to_string(),
     })
 }
@@ -98,7 +96,7 @@ fn parse_endpoint(value: &str, protocol: Protocol) -> Option<(String, u16)> {
 
     let address = match protocol {
         Protocol::Tcp | Protocol::Udp => parse_ipv4_address(address)?,
-        Protocol::Tcp6 | Protocol::Udp6 => address.to_string(),
+        Protocol::Tcp6 | Protocol::Udp6 => parse_ipv6_address(address)?,
     };
 
     Some((address, port))
@@ -120,6 +118,23 @@ fn parse_ipv4_address(value: &str) -> Option<String> {
         "{}.{}.{}.{}",
         bytes[0], bytes[1], bytes[2], bytes[3]
     ))
+}
+
+fn parse_ipv6_address(value: &str) -> Option<String> {
+    if value.len() != 32 {
+        return None;
+    }
+
+    let mut bytes = [0u8; 16];
+
+    for (index, chunk) in value.as_bytes().chunks_exact(8).enumerate() {
+        let word = std::str::from_utf8(chunk).ok()?;
+        let number = u32::from_str_radix(word, 16).ok()?;
+
+        bytes[index * 4..index * 4 + 4].copy_from_slice(&number.to_le_bytes());
+    }
+
+    Some(Ipv6Addr::from(bytes).to_string())
 }
 
 fn socket_state(value: &str, protocol: Protocol) -> &str {
@@ -156,7 +171,8 @@ mod tests {
 
     #[test]
     fn parses_socket_inode_and_tcp_state() {
-        let line = "0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 0 12345 1";
+        let line =
+            "0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 0 12345 1";
 
         let socket = super::parse_socket_line(line, super::Protocol::Tcp)
             .expect("socket line should parse");
@@ -177,6 +193,4 @@ mod tests {
         assert_eq!(socket.remote_address, None);
         assert_eq!(socket.remote_port, None);
     }
-
-
 }
