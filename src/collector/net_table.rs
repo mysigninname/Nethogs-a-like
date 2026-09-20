@@ -69,7 +69,14 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
     }
 
     let (local_address, local_port) = parse_endpoint(fields[1], protocol)?;
-    let (remote_address, remote_port) = parse_endpoint(fields[2], protocol)?;
+    let remote = parse_endpoint(fields[2], protocol);
+
+    let (remote_address, remote_port) = match remote {
+        Some((address, 0)) if address == "0.0.0.0" => (None, None),
+        Some((address, port)) => (Some(address), Some(port)),
+        None => (None, None),
+    };
+
 
     let inode = fields[10].parse::<u64>().ok()?;
 
@@ -78,8 +85,9 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
         protocol,
         local_address,
         local_port,
-        remote_address: Some(remote_address),
-        remote_port: Some(remote_port),
+        remote_address,
+        remote_port,
+
         state: socket_state(fields[3], protocol).to_string(),
     })
 }
