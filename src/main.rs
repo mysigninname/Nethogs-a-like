@@ -9,6 +9,9 @@ use std::time::Duration;
 
 
 fn main() {
+        loop {
+        print!("\x1B[2J\x1B[1;1H");
+
     println!("{:>8}  {:<24} SOCKET INODES", "PID", "PROCESS");
 
     let processes = list_processes();
@@ -88,5 +91,7 @@ fn main() {
         Err(error) => {
             eprintln!("Could not read first network total: {error}");
         }
+    }
+            sleep(Duration::from_secs(1));
     }
 }
