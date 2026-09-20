@@ -4,6 +4,9 @@ mod process;
 use collector::procfs::list_processes;
 use collector::sockets::sockets_for_process;
 use collector::traffic::read_traffic_totals;
+use std::thread::sleep;
+use std::time::Duration;
+
 
 fn main() {
     println!("{:>8}  {:<24} SOCKET INODES", "PID", "PROCESS");
@@ -58,15 +61,32 @@ fn main() {
     }
 
     println!();
-    println!("NETWORK TOTALS");
+    println!("NETWORK SPEED");
 
     match read_traffic_totals() {
-        Ok(totals) => {
-            println!("Received: {} bytes", totals.received_bytes);
-            println!("Transmitted: {} bytes", totals.transmitted_bytes);
+        Ok(first) => {
+            sleep(Duration::from_secs(1));
+
+            match read_traffic_totals() {
+                Ok(second) => {
+                    let received_per_second = second
+                        .received_bytes
+                        .saturating_sub(first.received_bytes);
+
+                    let transmitted_per_second = second
+                        .transmitted_bytes
+                        .saturating_sub(first.transmitted_bytes);
+
+                    println!("Received: {} bytes/s", received_per_second);
+                    println!("Transmitted: {} bytes/s", transmitted_per_second);
+                }
+                Err(error) => {
+                    eprintln!("Could not read second network total: {error}");
+                }
+            }
         }
         Err(error) => {
-            eprintln!("Could not read network totals: {error}");
+            eprintln!("Could not read first network total: {error}");
         }
     }
 }
