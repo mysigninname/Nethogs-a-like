@@ -60,8 +60,9 @@ fn parse_socket_line(line: &str, protocol: Protocol) -> Option<SocketInfo> {
     // 3 state
     // ...
     // 8 uid
-    // 9 inode
-    // 10 timeout
+    // 9 timeout
+    // 10 inode
+
    
     if fields.len() < 11 {
         return None;
