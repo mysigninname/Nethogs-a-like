@@ -3,6 +3,7 @@ mod process;
 
 use collector::procfs::list_processes;
 use collector::sockets::sockets_for_process;
+use collector::traffic::read_traffic_totals;
 
 fn main() {
     println!("{:>8}  {:<24} SOCKET INODES", "PID", "PROCESS");
@@ -49,12 +50,23 @@ fn main() {
                 if let Some(socket_owners) = owners.get(&socket.inode) {
                     println!("{socket:?} owners: {socket_owners:?}");
                 }
-
             }
-
         }
         Err(error) => {
             eprintln!("Could not read socket tables: {error}");
+        }
+    }
+
+    println!();
+    println!("NETWORK TOTALS");
+
+    match read_traffic_totals() {
+        Ok(totals) => {
+            println!("Received: {} bytes", totals.received_bytes);
+            println!("Transmitted: {} bytes", totals.transmitted_bytes);
+        }
+        Err(error) => {
+            eprintln!("Could not read network totals: {error}");
         }
     }
 }
