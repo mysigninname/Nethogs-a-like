@@ -132,3 +132,29 @@ fn socket_state(value: &str, protocol: Protocol) -> &str {
         Protocol::Udp | Protocol::Udp6 => value,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::parse_ipv4_address;
+
+    #[test]
+    fn parses_proc_ipv4_address() {
+        assert_eq!(
+            parse_ipv4_address("0100007F"),
+            Some("127.0.0.1".to_string())
+        );
+    }
+
+    #[test]
+    fn parses_socket_inode_and_tcp_state() {
+        let line = "0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 0 12345 1";
+
+        let socket = super::parse_socket_line(line, super::Protocol::Tcp)
+            .expect("socket line should parse");
+
+        assert_eq!(socket.inode, 12345);
+        assert_eq!(socket.local_port, 8080);
+        assert_eq!(socket.state, "LISTEN");
+    }
+
+}
