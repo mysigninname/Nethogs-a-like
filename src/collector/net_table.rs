@@ -166,4 +166,17 @@ mod tests {
         assert_eq!(socket.state, "LISTEN");
     }
 
+    #[test]
+    fn parses_listening_socket_without_remote_endpoint() {
+        let line =
+            "0: 0100007F:1F90 00000000:0000 0A 00000000:00000000 00:00000000 00000000 0 0 0 12345 1";
+
+        let socket = super::parse_socket_line(line, super::Protocol::Tcp)
+            .expect("socket line should parse");
+
+        assert_eq!(socket.remote_address, None);
+        assert_eq!(socket.remote_port, None);
+    }
+
+
 }
